@@ -11,7 +11,7 @@ if [ -z "$SERVICE_NAME" ]
 then
     echo " "
     echo " "
-	  echo " ./findimagemincluster.sh esp-avaliacaoDisciplinas "
+	  echo " ./tagpushimagefromhost.sh esp-service "
     
     echo " "
     echo " "

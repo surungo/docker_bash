@@ -15,7 +15,7 @@ fi
 
 if [ -z "$SWARM_ADM" ] 
 then
-#resolve o nome o host apartir do nome do serviço
+#get manager
 . "../fun_get_manager.sh"
 fi
 
