@@ -1,49 +1,50 @@
 #!/bin/bash
-SERVICE_NAME=$1
-SWARM_ADM=$2
 
-V_REGISTRY_UR1=
-V_REGISTRY_UR2=
-
-. "../fun_get_constants.sh"
-
-if [ -z "$SERVICE_NAME" ] 
+#LOAD CONSTANTS
+if [ -z "$V_SWARM_ADM_ARRAY" ] 
 then
-    echo " "
-    echo " "
-	  echo " ./tagpushimagefromhost.sh esp-service "
-    
-    echo " "
-    echo " "
-    exit
+
+    FILE=../../fun_get_constants.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
+    FILE=../fun_get_constants.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
 fi
 
-filter=$(echo $SERVICE_NAME | sed 's/^dsv-//g')
-filter=$(echo $filter | sed 's/^tst-//g')
-filter=$(echo $filter | sed 's/^hmg-//g')
-filter=$(echo $filter | sed 's/^esp-//g')
-filter=$(echo $filter | sed 's/^prod-//g')
-
+#CHOICE MANAGER
 if [ -z "$SWARM_ADM" ] 
 then
-#get manager
-. "../fun_get_manager.sh"
+
+    FILE=./choicecluster.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
+    FILE=./components/choicecluster.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
 fi
 
 echo "filter ${filter}"
 
 #for i in $(ssh  $SWARM_ADM  docker node ls | awk '{print $2}' | grep pucrs )
-for i in $(ssh -o "StrictHostKeyChecking no" "$SWARM_ADM" docker node ls --format "{{.Hostname}}" )
+for i in $(ssh -o "StrictHostKeyChecking no" "$SWARM_ADM" docker node ls -f "role=worker" --format "{{.Hostname}}" )
 do
   HOST=$i
   echo ""
-  #echo "$HOST"
+  echo "$HOST"
   
   #echo ${V_REGISTRY_UR1}
   #echo ${V_REGISTRY_UR2}
 
-  #  INFOARRAY=$(ssh "$HOST" docker images --format "${HOST}#__{{.Repository}}__#{{.ID}}#{{.CreatedAt}}#{{.Size}}#{{.Repository}}:{{.Tag}}" | sed 's/__build.pucrs.br:5000[[:punct:]]//g'| sed 's/__gitlab.pucrs.br:5443[[:punct:]]/__/g' | sed 's/ /./g' | sed 's/__dsv-/__/g'| sed 's/__tst-/__/g'  | sed 's/__hmg-/__/g' | sed 's/__esp-/__/g' | sed 's/__prod-/__/g' | grep "__${filter}__" )
-  INFOARRAY=$(ssh -o "StrictHostKeyChecking no" "$HOST" docker images --format "${HOST}#__{{.Repository}}__#{{.ID}}#{{.CreatedAt}}#{{.Size}}#{{.Repository}}:{{.Tag}}" | sed "s/__${V_REGISTRY_UR1}[[:punct:]]//g" | sed "s/__${V_REGISTRY_UR2}[[:punct:]]/__/g" | sed 's/ /./g' | sed 's/__dsv-/__/g'| sed 's/__tst-/__/g'  | sed 's/__hmg-/__/g' | sed 's/__esp-/__/g' | sed 's/__prod-/__/g' | grep "__${filter}__" )
+  INFOARRAY=$(ssh -o "StrictHostKeyChecking no" "$HOST" docker images --format "${HOST}#__{{.Repository}}__#{{.ID}}#{{.CreatedAt}}#{{.Size}}#{{.Repository}}:{{.Tag}}" | sed "s/__${V_REGISTRY_UR1}[[:punct:]]//g" | sed "s/__${V_REGISTRY_UR2}[[:punct:]]/__/g"   | sed 's/__${V_ENV[1]}/__/g'| sed 's/__${V_ENV[2]}/__/g'  | sed 's/__${V_ENV[3]}/__/g' | sed 's/__${V_ENV[4]}/__/g' | sed 's/__${V_ENV[5]}/__/g'  | grep "__${filter}__" )
   if [ -z "$INFOARRAY" ] 
   then
     echo "image not found in ${HOST}"
@@ -75,6 +76,6 @@ do
   
 done
 
-echo "[fim]"
+echo "[the end]"
 
 

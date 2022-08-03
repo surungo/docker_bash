@@ -1,44 +1,46 @@
 #!/bin/bash
-SERVICE_NAME=$1
-SWARM_ADM=$2
-
-
+SWARM_ADM=$1
+HOST=$2
+SERVICE_NAME=$3
+ 
+#CHOICE service
 if [ -z "$SERVICE_NAME" ] 
 then
-    echo " "
-    echo " parameters  servicename "
-    echo " ./changehostcontainer.sh prod-service " 
-    echo " "
-    echo " "
-    exit
+
+    FILE=./choiceservice.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
+    FILE=./components/choiceservice.sh
+    if [[ -f "$FILE" ]]; then
+        . "${FILE}"
+    fi
+
 fi
 
-if [ -z "$SWARM_ADM" ] 
-then
-#get manager
-. "../fun_get_manager.sh"
-fi
+NODE=$HOST
 
-#echo "ssh $SWARM_ADM docker service ps $SERVICE_NAME"
-echo "node: $SERVICE_NAME"
-NODES=($(ssh -o "StrictHostKeyChecking no" "$SWARM_ADM" docker service ps -f "desired-state=Running" --format "{{.Node}}" "$SERVICE_NAME"))
-
-
-for i in ${!NODES[@]}; do
-  echo "    Choice $i is ${NODES[$i]}"
-done
-read OPTION_NUMBER
-NODE=${NODES[$OPTION_NUMBER]}
-echo "node: $NODE"
-echo " "
-
-echo "ssh $SWARM_ADM docker service update --constraint-add node.hostname!=$NODE $SERVICE_NAME"
+echo "ssh -o \"StrictHostKeyChecking no\" $SWARM_ADM docker service update --constraint-add node.hostname!=$NODE $SERVICE_NAME"
 ssh -o "StrictHostKeyChecking no" $SWARM_ADM docker service update --constraint-add node.hostname!=$NODE $SERVICE_NAME
 echo "sleep 3"
 sleep 3
-echo "ssh $SWARM_ADM docker service update --constraint-rm node.hostname!=$NODE $SERVICE_NAME"
+echo "ssh -o \"StrictHostKeyChecking no\" $SWARM_ADM docker service update --constraint-rm node.hostname!=$NODE $SERVICE_NAME"
 ssh -o "StrictHostKeyChecking no" $SWARM_ADM docker service update --constraint-rm node.hostname!=$NODE $SERVICE_NAME
 echo " "
 ssh -o "StrictHostKeyChecking no" "$SWARM_ADM" docker service ps -f "desired-state=Running" "$SERVICE_NAME"
+
+SERVICE_NAME=""
+
+read -p "Do you want repeat process? (y/n) " yn
+
+case $yn in  
+	y ) echo ok, we will proceed & ./changehostcontainer.sh "${SWARM_ADM}" "${HOST}";;
+         
+	n ) echo exiting...;
+		exit;;
+	* ) echo invalid response;
+		exit 1;;
+esac
 
 echo "[the end]"
